@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 
 app = Flask(__name__)
 
@@ -12,13 +12,38 @@ def landing():
     return render_template("landing.html")
 
 
-@app.route("/register")
+@app.route("/register", methods=["GET", "POST"])
 def register():
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip()
+        password = request.form.get("password", "")
+
+        if not name or not email or not password:
+            error = "Please fill in all fields."
+        elif len(password) < 8:
+            error = "Password must be at least 8 characters."
+        else:
+            # Saving the account needs the database (Step 1)
+            error = "Account creation isn't available yet."
+        return render_template("register.html", error=error)
+
     return render_template("register.html")
 
 
-@app.route("/login")
+@app.route("/login", methods=["GET", "POST"])
 def login():
+    if request.method == "POST":
+        email = request.form.get("email", "").strip()
+        password = request.form.get("password", "")
+
+        if not email or not password:
+            error = "Please enter your email and password."
+        else:
+            # Checking credentials needs the database (Step 1)
+            error = "Sign in isn't available yet."
+        return render_template("login.html", error=error)
+
     return render_template("login.html")
 
 
