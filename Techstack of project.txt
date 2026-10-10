@@ -1,0 +1,42 @@
+ ▐▛███▛█   Claude Code v2.1.287
+▝▜██████▀  Opus 5.5 · Claude Pro
+ ▝▝   ▝▝   C:\Projects\expense-tracker
+
+  Get to finished work sooner with Opus 5.5. Switch anytime with /model.
+
+❯ what is the techstack used in this project                                    
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● Spendly is a small server-rendered web app built with Python and Flask.
+
+  Backend
+  - Python with Flask 3.1.3 as the web framework. The routes are in app.py, and
+    the dev server runs on port 5001 in debug mode.
+  - Werkzeug 3.1.6, which Flask is built on. It also provides password hashing
+    helpers, which will probably be used for the login and register features.
+  - SQLite as the database, using Python's built-in sqlite3 module.
+    database/db.py is still a stub; comments there say get_db(), init_db() and
+    seed_db() will be added.
+
+  Frontend
+  - Jinja2 templates in templates/: base.html, landing.html, login.html and
+    register.html.
+  - Plain CSS in static/css/style.css, with no CSS framework.
+  - Plain JavaScript in static/js/main.js, which is currently empty.
+  - Google Fonts: DM Serif Display and DM Sans.
+
+  Testing
+  - pytest 8.3.5 and pytest-flask 1.3.0. No tests have been written yet.
+
+  There's no ORM, no build step and no frontend framework. The codebase is set
+  up as a step-by-step tutorial, and most routes still return placeholder text:
+  logout, profile, and adding, editing and deleting expenses.
+
+  The repo also contains a __MACOSX/ folder left over from extracting a zip file
+  on a Mac. You can safely delete it.
+
+✻ Cooked for 15s · done Saturday 1:48 AM
+
+❯ /rename Tech Stack of Project 
+  ⎿  Session renamed to: Tech Stack of Project
