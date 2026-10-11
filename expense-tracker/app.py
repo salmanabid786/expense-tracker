@@ -1,11 +1,13 @@
+import os
 import sqlite3
 
-from flask import Flask, redirect, render_template, request, url_for
-from werkzeug.security import generate_password_hash
+from flask import Flask, redirect, render_template, request, session, url_for
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from database.db import get_db, init_db, seed_db
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(24)
 
 with app.app_context():
     init_db()
@@ -23,6 +25,9 @@ def landing():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
+    if session.get("user_id"):
+        return redirect(url_for("landing"))
+
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         email = request.form.get("email", "").strip().lower()
@@ -52,18 +57,40 @@ def register():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    if session.get("user_id"):
+        return redirect(url_for("landing"))
+
     if request.method == "POST":
-        email = request.form.get("email", "").strip()
+        email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
 
         if not email or not password:
             error = "Please enter your email and password."
         else:
-            # Checking credentials needs the database (Step 1)
-            error = "Sign in isn't available yet."
-        return render_template("login.html", error=error)
+            conn = get_db()
+            try:
+                user = conn.execute(
+                    "SELECT id, name, password_hash FROM users WHERE email = ?",
+                    (email,),
+                ).fetchone()
+            finally:
+                conn.close()
+
+            if user and check_password_hash(user["password_hash"], password):
+                session.clear()
+                session["user_id"] = user["id"]
+                session["user_name"] = user["name"]
+                return redirect(url_for("landing"))
+            error = "Invalid email or password."
+        return render_template("login.html", error=error, email=email)
 
     return render_template("login.html")
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("landing"))
 
 
 @app.route("/terms-and-conditions")
@@ -79,11 +106,6 @@ def privacy_policy():
 # ------------------------------------------------------------------ #
 # Placeholder routes — students will implement these                  #
 # ------------------------------------------------------------------ #
-
-@app.route("/logout")
-def logout():
-    return "Logout — coming in Step 3"
-
 
 @app.route("/profile")
 def profile():
