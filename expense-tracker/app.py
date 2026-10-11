@@ -1,4 +1,7 @@
-from flask import Flask, render_template, request
+import sqlite3
+
+from flask import Flask, redirect, render_template, request, url_for
+from werkzeug.security import generate_password_hash
 
 from database.db import get_db, init_db, seed_db
 
@@ -22,7 +25,7 @@ def landing():
 def register():
     if request.method == "POST":
         name = request.form.get("name", "").strip()
-        email = request.form.get("email", "").strip()
+        email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
 
         if not name or not email or not password:
@@ -30,9 +33,19 @@ def register():
         elif len(password) < 8:
             error = "Password must be at least 8 characters."
         else:
-            # Saving the account needs the database (Step 1)
-            error = "Account creation isn't available yet."
-        return render_template("register.html", error=error)
+            conn = get_db()
+            try:
+                conn.execute(
+                    "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
+                    (name, email, generate_password_hash(password)),
+                )
+                conn.commit()
+                return redirect(url_for("login"))
+            except sqlite3.IntegrityError:
+                error = "An account with that email already exists."
+            finally:
+                conn.close()
+        return render_template("register.html", error=error, name=name, email=email)
 
     return render_template("register.html")
 
