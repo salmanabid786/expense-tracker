@@ -7,6 +7,7 @@
 {% endblock %}
 
 {% block content %}
+{% set empty_msg = 'No expenses in this period' if filter.active else 'No expenses yet' %}
 <section class="profile-page">
 
     <div class="profile-header">
@@ -21,11 +22,43 @@
         </button>
     </div>
 
+    <div class="profile-filter">
+        <h2 class="profile-card-title">
+            <i data-lucide="calendar-range"></i>
+            Date range
+        </h2>
+        <div class="profile-filter-row">
+            <nav class="profile-chips" aria-label="Date range presets">
+                {% for p in filter.presets %}
+                <a class="profile-chip{% if filter.preset == p.key %} is-active{% endif %}"
+                   href="{{ url_for('profile', start=p.start or None, end=p.end or None) }}"
+                   {% if filter.preset == p.key %}aria-current="page"{% endif %}>{{ p.label }}</a>
+                {% endfor %}
+            </nav>
+            <form class="profile-filter-form" method="get" action="{{ url_for('profile') }}">
+                <label class="profile-filter-field">
+                    <span>From</span>
+                    <input type="date" name="start" class="form-input" value="{{ filter.start }}">
+                </label>
+                <label class="profile-filter-field">
+                    <span>To</span>
+                    <input type="date" name="end" class="form-input" value="{{ filter.end }}">
+                </label>
+                <button type="submit" class="btn-ghost profile-filter-apply">Apply</button>
+                <a href="{{ url_for('profile') }}" class="profile-filter-clear">Clear</a>
+            </form>
+        </div>
+        {% if filter.error %}
+        <p class="profile-filter-error" role="alert">{{ filter.error }}</p>
+        {% endif %}
+        <p class="profile-filter-caption">Showing {{ filter.label }}</p>
+    </div>
+
     <div class="profile-stats">
         <div class="profile-stat">
             <span class="profile-stat-icon"><i data-lucide="wallet"></i></span>
             <div>
-                <p class="profile-stat-label">Total spent</p>
+                <p class="profile-stat-label">{{ 'Spent in period' if filter.active else 'Total spent' }}</p>
                 <p class="profile-stat-value">₹{{ "{:,.2f}".format(stats.total_spent) }}</p>
             </div>
         </div>
@@ -84,7 +117,7 @@
             {% else %}
             <div class="profile-empty">
                 <i data-lucide="receipt"></i>
-                <p>No expenses yet</p>
+                <p>{{ empty_msg }}</p>
             </div>
             {% endif %}
         </div>
@@ -109,7 +142,7 @@
             {% else %}
             <div class="profile-empty">
                 <i data-lucide="receipt"></i>
-                <p>No expenses yet</p>
+                <p>{{ empty_msg }}</p>
             </div>
             {% endif %}
         </div>

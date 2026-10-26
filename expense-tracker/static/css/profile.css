@@ -14,6 +14,7 @@
 
 /* Shared card surface */
 .profile-header,
+.profile-filter,
 .profile-stat,
 .profile-card {
     background: var(--paper-card);
@@ -78,6 +79,89 @@
 }
 
 .profile-edit svg { width: 16px; height: 16px; }
+
+/* Date filter */
+.profile-filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.profile-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.profile-chip {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--ink-soft);
+    text-decoration: none;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.profile-chip:hover { background: var(--paper-warm); }
+
+.profile-chip.is-active,
+.profile-chip.is-active:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--paper-card);
+}
+
+.profile-filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 1rem;
+}
+
+.profile-filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.profile-filter-field span {
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-muted);
+}
+
+.profile-filter-field .form-input { width: auto; }
+
+.profile-filter-apply { font-family: var(--font-body); cursor: pointer; }
+
+.profile-filter-clear {
+    align-self: center;
+    font-size: 0.875rem;
+    color: var(--ink-muted);
+}
+
+.profile-filter-clear:hover { color: var(--ink); }
+
+.profile-filter-error {
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-sm);
+    background: var(--danger-light);
+    color: var(--danger);
+    font-size: 0.875rem;
+}
+
+.profile-filter-caption {
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    color: var(--ink-muted);
+}
 
 /* Summary cards */
 .profile-stats {
@@ -259,4 +343,7 @@
     }
     .profile-edit { width: 100%; justify-content: center; }
     .profile-table-wrap { overflow-x: auto; }
+    .profile-filter-form { flex-direction: column; align-items: stretch; }
+    .profile-filter-field .form-input { width: 100%; }
+    .profile-filter-clear { align-self: flex-start; }
 }

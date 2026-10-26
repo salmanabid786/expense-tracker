@@ -16,6 +16,53 @@ def get_db():
     return conn
 
 
+def get_user(user_id):
+    conn = get_db()
+    try:
+        return conn.execute(
+            "SELECT name, email, created_at FROM users WHERE id = ?",
+            (user_id,),
+        ).fetchone()
+    finally:
+        conn.close()
+
+
+def get_expenses(user_id, start=None, end=None):
+    """Return the user's expenses, newest first, optionally limited to [start, end]."""
+    where = ["user_id = ?"]
+    params = [user_id]
+    if start:
+        where.append("date >= ?")
+        params.append(start.isoformat())
+    if end:
+        where.append("date <= ?")
+        params.append(end.isoformat())
+
+    conn = get_db()
+    try:
+        return conn.execute(
+            "SELECT amount, category, date, description FROM expenses WHERE "
+            + " AND ".join(where)
+            + " ORDER BY date DESC, id DESC",
+            params,
+        ).fetchall()
+    finally:
+        conn.close()
+
+
+def get_month_total(user_id, today):
+    """Return the user's spending from the 1st of today's month up to today."""
+    conn = get_db()
+    try:
+        return conn.execute(
+            "SELECT COALESCE(SUM(amount), 0) FROM expenses"
+            " WHERE user_id = ? AND date >= ? AND date <= ?",
+            (user_id, today.replace(day=1).isoformat(), today.isoformat()),
+        ).fetchone()[0]
+    finally:
+        conn.close()
+
+
 def init_db():
     conn = get_db()
     conn.executescript(
