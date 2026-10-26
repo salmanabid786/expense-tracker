@@ -1,11 +1,19 @@
 import os
 import sqlite3
-from datetime import date
+from collections import defaultdict
+from datetime import date, timedelta
 
 from flask import Flask, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from database.db import CATEGORIES, get_db, init_db, seed_db
+from database.db import (
+    get_db,
+    get_expenses,
+    get_month_total,
+    get_user,
+    init_db,
+    seed_db,
+)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(24)
@@ -94,38 +102,96 @@ def logout():
     return redirect(url_for("landing"))
 
 
+def _parse_date_range(args):
+    """Return (start, end, error) from the query string; invalid input yields no range."""
+    raw_start = args.get("start", "").strip()
+    raw_end = args.get("end", "").strip()
+    try:
+        start = date.fromisoformat(raw_start) if raw_start else None
+        end = date.fromisoformat(raw_end) if raw_end else None
+    except ValueError:
+        return None, None, "Please enter valid dates."
+    if start and end and start > end:
+        return None, None, "Start date must be on or before end date."
+    return start, end, None
+
+
+def _date_presets(today):
+    """Return the preset chips (key, label, ISO start/end) relative to today."""
+    ranges = [
+        ("month", "This month", today.replace(day=1)),
+        ("30d", "Last 30 days", today - timedelta(days=29)),
+        ("3m", "Last 3 months", today - timedelta(days=89)),
+        ("year", "This year", today.replace(month=1, day=1)),
+    ]
+    presets = [
+        {"key": key, "label": label, "start": start.isoformat(), "end": today.isoformat()}
+        for key, label, start in ranges
+    ]
+    presets.append({"key": "all", "label": "All time", "start": "", "end": ""})
+    return presets
+
+
+def _build_date_filter(start, end, error, today):
+    """Return the `filter` dict the profile template expects."""
+    presets = _date_presets(today)
+    start_iso = start.isoformat() if start else ""
+    end_iso = end.isoformat() if end else ""
+    preset = next(
+        (p["key"] for p in presets if p["start"] == start_iso and p["end"] == end_iso), ""
+    )
+    if start and end:
+        label = f"{start:%d %b %Y} – {end:%d %b %Y}"
+    elif start:
+        label = f"from {start:%d %b %Y}"
+    elif end:
+        label = f"until {end:%d %b %Y}"
+    else:
+        label = "all time"
+
+    return {
+        "start": start_iso,
+        "end": end_iso,
+        "active": bool(start or end),
+        "label": label,
+        "preset": preset,
+        "presets": presets,
+        "error": error,
+    }
+
+
+def _parse_stored_date(value):
+    """Parse a stored YYYY-MM-DD[...] value; return None if it is missing or malformed."""
+    try:
+        return date.fromisoformat(value[:10])
+    except (TypeError, ValueError):
+        return None
+
+
 @app.route("/profile")
 def profile():
     if not session.get("user_id"):
         return redirect(url_for("login"))
 
-    # Sample data mirroring seed_db(); Step 5 replaces this with real queries.
+    user_id = session["user_id"]
     today = date.today()
-    sample = [
-        (12.50, "Food", 2, "Lunch at cafe"),
-        (45.00, "Transport", 4, "Monthly bus pass"),
-        (120.75, "Bills", 6, "Electricity bill"),
-        (30.00, "Health", 9, "Pharmacy"),
-        (18.99, "Entertainment", 12, "Movie tickets"),
-        (64.20, "Shopping", 15, "New shoes"),
-        (9.99, "Other", 18, "Phone case"),
-        (56.30, "Food", 21, "Groceries"),
-        (22.40, "Transport", 23, "Taxi ride"),
-        (75.00, "Bills", 24, "Internet bill"),
-        (14.75, "Food", 25, "Coffee and snacks"),
-        (40.00, "Health", 26, "Gym membership"),
-        (29.99, "Shopping", 28, "Books"),
-    ]
-    expenses = [
-        {"date": today.replace(day=d), "description": desc, "category": cat, "amount": amt}
-        for amt, cat, d, desc in sample
-    ]
+    start, end, error = _parse_date_range(request.args)
+
+    row = get_user(user_id)
+    if row is None:
+        session.clear()
+        return redirect(url_for("login"))
+    expenses = get_expenses(user_id, start, end)
+    month_spent = get_month_total(user_id, today)
+
     total = sum(e["amount"] for e in expenses)
 
-    totals = {c: sum(e["amount"] for e in expenses if e["category"] == c) for c in CATEGORIES}
+    totals = defaultdict(float)
+    for e in expenses:
+        totals[e["category"]] += e["amount"]
     categories = sorted(
         (
-            {"name": c, "amount": amt, "percent": round(amt / total * 100)}
+            {"name": c, "amount": amt, "percent": round(amt / total * 100) if total else 0}
             for c, amt in totals.items()
             if amt > 0
         ),
@@ -133,19 +199,27 @@ def profile():
         reverse=True,
     )
 
-    recent = sorted(expenses, key=lambda e: e["date"], reverse=True)[:10]
-    transactions = [{**e, "date": e["date"].strftime("%d %b")} for e in recent]
+    transactions = []
+    for e in expenses[:10]:
+        spent_on = _parse_stored_date(e["date"])
+        transactions.append({
+            "date": spent_on.strftime("%d %b") if spent_on else e["date"],
+            "description": e["description"] or "",
+            "category": e["category"],
+            "amount": e["amount"],
+        })
 
-    name = session.get("user_name", "")
+    name = row["name"]
+    created = _parse_stored_date(row["created_at"]) or today
     user = {
         "name": name,
-        "email": "demo@spendly.com",
+        "email": row["email"],
         "initials": "".join(w[0] for w in name.split()[:2]).upper(),
-        "member_since": today.strftime("%b %Y"),
+        "member_since": created.strftime("%b %Y"),
     }
     stats = {
         "total_spent": total,
-        "month_spent": total,
+        "month_spent": month_spent,
         "transaction_count": len(expenses),
         "top_category": categories[0]["name"] if categories else "—",
     }
@@ -156,6 +230,7 @@ def profile():
         stats=stats,
         transactions=transactions,
         categories=categories,
+        filter=_build_date_filter(start, end, error, today),
     )
 
 
