@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Profile — Spendly{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="profile-page">
+
+    <div class="profile-header">
+        <div class="profile-avatar" aria-hidden="true">{{ user.initials }}</div>
+        <div class="profile-identity">
+            <h1 class="profile-name">{{ user.name }}</h1>
+            <p class="profile-meta">{{ user.email }} · Member since {{ user.member_since }}</p>
+        </div>
+        <button type="button" class="btn-ghost profile-edit" aria-disabled="true">
+            <i data-lucide="pencil"></i>
+            Edit profile
+        </button>
+    </div>
+
+    <div class="profile-stats">
+        <div class="profile-stat">
+            <span class="profile-stat-icon"><i data-lucide="wallet"></i></span>
+            <div>
+                <p class="profile-stat-label">Total spent</p>
+                <p class="profile-stat-value">₹{{ "{:,.2f}".format(stats.total_spent) }}</p>
+            </div>
+        </div>
+        <div class="profile-stat">
+            <span class="profile-stat-icon"><i data-lucide="calendar"></i></span>
+            <div>
+                <p class="profile-stat-label">This month</p>
+                <p class="profile-stat-value">₹{{ "{:,.2f}".format(stats.month_spent) }}</p>
+            </div>
+        </div>
+        <div class="profile-stat">
+            <span class="profile-stat-icon"><i data-lucide="receipt"></i></span>
+            <div>
+                <p class="profile-stat-label">Transactions</p>
+                <p class="profile-stat-value">{{ stats.transaction_count }}</p>
+            </div>
+        </div>
+        <div class="profile-stat">
+            <span class="profile-stat-icon"><i data-lucide="tag"></i></span>
+            <div>
+                <p class="profile-stat-label">Top category</p>
+                <p class="profile-stat-value">{{ stats.top_category }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="profile-grid">
+        <div class="profile-card">
+            <h2 class="profile-card-title">
+                <i data-lucide="credit-card"></i>
+                Recent transactions
+            </h2>
+            {% if transactions %}
+            <div class="profile-table-wrap">
+                <table class="profile-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Category</th>
+                            <th class="profile-amount">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in transactions %}
+                        <tr>
+                            <td class="profile-date">{{ t.date }}</td>
+                            <td>{{ t.description }}</td>
+                            <td><span class="profile-pill">{{ t.category }}</span></td>
+                            <td class="profile-amount">₹{{ "{:,.2f}".format(t.amount) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="profile-empty">
+                <i data-lucide="receipt"></i>
+                <p>No expenses yet</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="profile-card">
+            <h2 class="profile-card-title">
+                <i data-lucide="pie-chart"></i>
+                Spending by category
+            </h2>
+            {% if categories %}
+            <ul class="profile-cat-list">
+                {% for c in categories %}
+                <li class="profile-cat-row">
+                    <span class="profile-cat-name">{{ c.name }}</span>
+                    <span class="profile-cat-amount">₹{{ "{:,.2f}".format(c.amount) }}</span>
+                    <div class="profile-cat-track">
+                        <div class="profile-cat-bar" style="width: {{ c.percent }}%"></div>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div class="profile-empty">
+                <i data-lucide="receipt"></i>
+                <p>No expenses yet</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/lucide@0.460.0"></script>
+<script>lucide.createIcons();</script>
+{% endblock %}
