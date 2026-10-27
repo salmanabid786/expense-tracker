@@ -61,25 +61,6 @@
     overflow-wrap: anywhere;
 }
 
-.profile-edit {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-family: var(--font-body);
-}
-
-.profile-edit[aria-disabled="true"] {
-    cursor: not-allowed;
-    opacity: 0.6;
-}
-
-.profile-edit[aria-disabled="true"]:hover {
-    border-color: var(--border);
-    color: var(--ink-soft);
-}
-
-.profile-edit svg { width: 16px; height: 16px; }
-
 /* Date filter */
 .profile-filter-row {
     display: flex;
@@ -138,15 +119,16 @@
 
 .profile-filter-field .form-input { width: auto; }
 
-.profile-filter-apply { font-family: var(--font-body); cursor: pointer; }
-
-.profile-filter-clear {
-    align-self: center;
-    font-size: 0.875rem;
-    color: var(--ink-muted);
+.profile-filter-actions {
+    display: flex;
+    gap: 0.5rem;
 }
 
-.profile-filter-clear:hover { color: var(--ink); }
+.profile-filter-btn {
+    min-width: 5.5rem;
+    text-align: center;
+    line-height: 1.5;
+}
 
 .profile-filter-error {
     margin-top: 1rem;
@@ -341,9 +323,8 @@
         flex-wrap: wrap;
         gap: 1rem;
     }
-    .profile-edit { width: 100%; justify-content: center; }
     .profile-table-wrap { overflow-x: auto; }
     .profile-filter-form { flex-direction: column; align-items: stretch; }
     .profile-filter-field .form-input { width: 100%; }
-    .profile-filter-clear { align-self: flex-start; }
+    .profile-filter-btn { flex: 1; }
 }

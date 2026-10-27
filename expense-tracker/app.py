@@ -1,3 +1,4 @@
+import math
 import os
 import sqlite3
 from collections import defaultdict
@@ -7,6 +8,8 @@ from flask import Flask, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from database.db import (
+    CATEGORIES,
+    add_expense as insert_expense,
     get_db,
     get_expenses,
     get_month_total,
@@ -117,18 +120,26 @@ def _parse_date_range(args):
 
 
 def _date_presets(today):
-    """Return the preset chips (key, label, ISO start/end) relative to today."""
+    """Return the preset chips (key, short label, full title, ISO start/end) relative to today."""
     ranges = [
-        ("month", "This month", today.replace(day=1)),
-        ("30d", "Last 30 days", today - timedelta(days=29)),
-        ("3m", "Last 3 months", today - timedelta(days=89)),
-        ("year", "This year", today.replace(month=1, day=1)),
+        ("week", "This week", "This week", today - timedelta(days=today.weekday())),
+        ("month", "This month", "This month", today.replace(day=1)),
+        ("3m", "3M", "Last 3 months", today - timedelta(days=89)),
+        ("year", "This year", "This year", today.replace(month=1, day=1)),
     ]
     presets = [
-        {"key": key, "label": label, "start": start.isoformat(), "end": today.isoformat()}
-        for key, label, start in ranges
+        {
+            "key": key,
+            "label": label,
+            "title": title,
+            "start": start.isoformat(),
+            "end": today.isoformat(),
+        }
+        for key, label, title, start in ranges
     ]
-    presets.append({"key": "all", "label": "All time", "start": "", "end": ""})
+    presets.append(
+        {"key": "all", "label": "All", "title": "All time", "start": "", "end": ""}
+    )
     return presets
 
 
@@ -166,6 +177,56 @@ def _parse_stored_date(value):
         return date.fromisoformat(value[:10])
     except (TypeError, ValueError):
         return None
+
+
+MAX_AMOUNT = 1_000_000
+MAX_DESCRIPTION = 200
+
+
+def _parse_expense_form(form):
+    """Return (values, cleaned, error).
+
+    `values` holds the stripped raw inputs for re-filling the form. `cleaned` is a dict
+    matching database.db.add_expense's keyword arguments, or None when `error` is set.
+    """
+    values = {
+        key: form.get(key, "").strip()
+        for key in ("amount", "category", "date", "description")
+    }
+
+    try:
+        amount = float(values["amount"])
+    except ValueError:
+        amount = None
+    # Round before the range check so e.g. 0.004 can't slip through as 0.00.
+    if amount is not None and math.isfinite(amount):
+        amount = round(amount, 2)
+    else:
+        amount = None
+    if amount is None or not 0 < amount <= MAX_AMOUNT:
+        return values, None, "Please enter a valid amount greater than 0."
+
+    category = values["category"]
+    if category not in CATEGORIES:
+        return values, None, "Please choose a valid category."
+
+    try:
+        spent_on = date.fromisoformat(values["date"])
+    except ValueError:
+        return values, None, "Please enter a valid date."
+
+    description = values["description"]
+    if len(description) > MAX_DESCRIPTION:
+        error = f"Description must be {MAX_DESCRIPTION} characters or fewer."
+        return values, None, error
+
+    cleaned = {
+        "amount": amount,
+        "category": category,
+        "spent_on": spent_on,
+        "description": description or None,
+    }
+    return values, cleaned, None
 
 
 @app.route("/profile")
@@ -246,6 +307,32 @@ def business_analytics():
     return render_template("business_analytics.html")
 
 
+@app.route("/expenses/add", methods=["GET", "POST"])
+def add_expense():
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    if get_user(session["user_id"]) is None:
+        session.clear()
+        return redirect(url_for("login"))
+
+    if request.method == "POST":
+        values, cleaned, error = _parse_expense_form(request.form)
+        if error is None:
+            insert_expense(session["user_id"], **cleaned)
+            return redirect(url_for("profile"))
+    else:
+        values, error = {"date": date.today().isoformat()}, None
+
+    return render_template(
+        "add_expense.html",
+        error=error,
+        values=values,
+        categories=CATEGORIES,
+        max_description=MAX_DESCRIPTION,
+    )
+
+
 @app.route("/terms-and-conditions")
 def terms_and_conditions():
     return render_template("terms.html")
@@ -259,11 +346,6 @@ def privacy_policy():
 # ------------------------------------------------------------------ #
 # Placeholder routes — students will implement these                  #
 # ------------------------------------------------------------------ #
-
-@app.route("/expenses/add")
-def add_expense():
-    return "Add expense — coming in Step 7"
-
 
 @app.route("/expenses/<int:id>/edit")
 def edit_expense(id):
