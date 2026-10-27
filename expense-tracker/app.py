@@ -234,6 +234,18 @@ def profile():
     )
 
 
+@app.route("/business-analytics")
+def business_analytics():
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    if get_user(session["user_id"]) is None:
+        session.clear()
+        return redirect(url_for("login"))
+
+    return render_template("business_analytics.html")
+
+
 @app.route("/terms-and-conditions")
 def terms_and_conditions():
     return render_template("terms.html")
