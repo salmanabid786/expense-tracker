@@ -16,10 +16,6 @@
             <h1 class="profile-name">{{ user.name }}</h1>
             <p class="profile-meta">{{ user.email }} · Member since {{ user.member_since }}</p>
         </div>
-        <button type="button" class="btn-ghost profile-edit" aria-disabled="true">
-            <i data-lucide="pencil"></i>
-            Edit profile
-        </button>
     </div>
 
     <div class="profile-filter">
@@ -32,6 +28,7 @@
                 {% for p in filter.presets %}
                 <a class="profile-chip{% if filter.preset == p.key %} is-active{% endif %}"
                    href="{{ url_for('profile', start=p.start or None, end=p.end or None) }}"
+                   title="{{ p.title }}" aria-label="{{ p.title }}"
                    {% if filter.preset == p.key %}aria-current="page"{% endif %}>{{ p.label }}</a>
                 {% endfor %}
             </nav>
@@ -44,8 +41,10 @@
                     <span>To</span>
                     <input type="date" name="end" class="form-input" value="{{ filter.end }}">
                 </label>
-                <button type="submit" class="btn-ghost profile-filter-apply">Apply</button>
-                <a href="{{ url_for('profile') }}" class="profile-filter-clear">Clear</a>
+                <div class="profile-filter-actions">
+                    <button type="submit" class="btn-primary profile-filter-btn">Apply</button>
+                    <a href="{{ url_for('profile') }}" class="btn-primary profile-filter-btn">Clear</a>
+                </div>
             </form>
         </div>
         {% if filter.error %}

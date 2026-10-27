@@ -63,6 +63,20 @@ def get_month_total(user_id, today):
         conn.close()
 
 
+def add_expense(user_id, amount, category, spent_on, description):
+    """Insert one expense for user_id; spent_on is a datetime.date."""
+    conn = get_db()
+    try:
+        conn.execute(
+            "INSERT INTO expenses (user_id, amount, category, date, description)"
+            " VALUES (?, ?, ?, ?, ?)",
+            (user_id, amount, category, spent_on.isoformat(), description),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
 def init_db():
     conn = get_db()
     conn.executescript(

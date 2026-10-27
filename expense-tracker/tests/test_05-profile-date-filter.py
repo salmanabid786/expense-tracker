@@ -366,7 +366,7 @@ class TestFilterUI:
         _, page = get_profile(auth)
         chips = chip_tags(page)
         assert len(chips) == 5, f"expected 5 chips, got {chips}"
-        for label in ("This month", "Last 30 days", "Last 3 months", "This year", "All time"):
+        for label in ("This week", "This month", "Last 3 months", "This year", "All time"):
             assert label in page
 
     def test_all_time_chip_active_by_default_with_caption(self, auth):
@@ -384,8 +384,8 @@ class TestFilterUI:
     def test_preset_chip_hrefs_use_expected_ranges(self, auth):
         today = date.today()
         expected = {
+            "week": today - timedelta(days=today.weekday()),
             "month": today.replace(day=1),
-            "30d": today - timedelta(days=29),
             "3m": today - timedelta(days=89),
             "year": today.replace(month=1, day=1),
         }
@@ -397,13 +397,13 @@ class TestFilterUI:
 
     @pytest.mark.parametrize(
         "key",
-        ["month", "30d", "3m", "year"],
+        ["week", "month", "3m", "year"],
     )
     def test_preset_range_marks_matching_chip_active(self, auth, key):
         today = date.today()
         start = {
+            "week": today - timedelta(days=today.weekday()),
             "month": today.replace(day=1),
-            "30d": today - timedelta(days=29),
             "3m": today - timedelta(days=89),
             "year": today.replace(month=1, day=1),
         }[key]
