@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -c \"\nimport sys, json, subprocess\ndata = json.load(sys.stdin)\nfile = data.get('tool_input', {}).get('file_path', '')\nif file.endswith('.py'):\n    subprocess.run([sys.executable, '-m', 'black', '--quiet', file])\n\""
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -c \"\nimport sys, json, re\ntry:\n    data = json.load(sys.stdin)\n    cmd = data.get('tool_input', {}).get('command', '').lower()\n    protected = ['expense_tracker.db', '.env', 'migrations']\n    dangerous = re.compile(r'\\b(rm|unlink|truncate|remove-item|del|erase|rd|rmdir|ri)\\b')\n    if dangerous.search(cmd):\n        for p in protected:\n            if p in cmd:\n                print('BLOCKED: Cannot run destructive command on protected file: ' + p, file=sys.stderr)\n                sys.exit(2)\nexcept Exception as e:\n    print('BLOCKED: protection hook failed, refusing to run: ' + str(e), file=sys.stderr)\n    sys.exit(2)\n\""
+          }
+        ]
+      }
+    ]
+  }
+}
