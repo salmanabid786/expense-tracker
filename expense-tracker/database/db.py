@@ -41,7 +41,7 @@ def get_expenses(user_id, start=None, end=None):
     conn = get_db()
     try:
         return conn.execute(
-            "SELECT amount, category, date, description FROM expenses WHERE "
+            "SELECT id, amount, category, date, description FROM expenses WHERE "
             + " AND ".join(where)
             + " ORDER BY date DESC, id DESC",
             params,
@@ -73,6 +73,37 @@ def add_expense(user_id, amount, category, spent_on, description):
             (user_id, amount, category, spent_on.isoformat(), description),
         )
         conn.commit()
+    finally:
+        conn.close()
+
+
+def get_expense(expense_id, user_id):
+    """Return one expense owned by user_id, or None if missing or someone else's."""
+    conn = get_db()
+    try:
+        return conn.execute(
+            "SELECT id, amount, category, date, description FROM expenses"
+            " WHERE id = ? AND user_id = ?",
+            (expense_id, user_id),
+        ).fetchone()
+    finally:
+        conn.close()
+
+
+def update_expense(expense_id, user_id, amount, category, spent_on, description):
+    """Update one expense owned by user_id; spent_on is a datetime.date.
+
+    Return True if a row was updated.
+    """
+    conn = get_db()
+    try:
+        cur = conn.execute(
+            "UPDATE expenses SET amount = ?, category = ?, date = ?, description = ?"
+            " WHERE id = ? AND user_id = ?",
+            (amount, category, spent_on.isoformat(), description, expense_id, user_id),
+        )
+        conn.commit()
+        return cur.rowcount == 1
     finally:
         conn.close()
 
