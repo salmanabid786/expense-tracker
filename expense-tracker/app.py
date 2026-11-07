@@ -4,18 +4,20 @@ import sqlite3
 from collections import defaultdict
 from datetime import date, timedelta
 
-from flask import Flask, redirect, render_template, request, session, url_for
+from flask import Flask, abort, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from database.db import (
     CATEGORIES,
     add_expense as insert_expense,
     get_db,
+    get_expense,
     get_expenses,
     get_month_total,
     get_user,
     init_db,
     seed_db,
+    update_expense,
 )
 
 app = Flask(__name__)
@@ -264,6 +266,7 @@ def profile():
     for e in expenses[:10]:
         spent_on = _parse_stored_date(e["date"])
         transactions.append({
+            "id": e["id"],
             "date": spent_on.strftime("%d %b") if spent_on else e["date"],
             "description": e["description"] or "",
             "category": e["category"],
@@ -333,6 +336,45 @@ def add_expense():
     )
 
 
+@app.route("/expenses/<int:id>/edit", methods=["GET", "POST"])
+def edit_expense(id):
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    user_id = session["user_id"]
+    if get_user(user_id) is None:
+        session.clear()
+        return redirect(url_for("login"))
+
+    # Missing and not-owned expenses look the same: never reveal another user's row.
+    expense = get_expense(id, user_id)
+    if expense is None:
+        abort(404)
+
+    if request.method == "POST":
+        values, cleaned, error = _parse_expense_form(request.form)
+        if error is None:
+            update_expense(id, user_id, **cleaned)
+            return redirect(url_for("profile"))
+    else:
+        values = {
+            "amount": f"{expense['amount']:.2f}",
+            "category": expense["category"],
+            "date": (expense["date"] or "")[:10],
+            "description": expense["description"] or "",
+        }
+        error = None
+
+    return render_template(
+        "edit_expense.html",
+        error=error,
+        values=values,
+        categories=CATEGORIES,
+        max_description=MAX_DESCRIPTION,
+        expense_id=id,
+    )
+
+
 @app.route("/terms-and-conditions")
 def terms_and_conditions():
     return render_template("terms.html")
@@ -346,11 +388,6 @@ def privacy_policy():
 # ------------------------------------------------------------------ #
 # Placeholder routes — students will implement these                  #
 # ------------------------------------------------------------------ #
-
-@app.route("/expenses/<int:id>/edit")
-def edit_expense(id):
-    return "Edit expense — coming in Step 8"
-
 
 @app.route("/expenses/<int:id>/delete")
 def delete_expense(id):

@@ -247,6 +247,34 @@
 
 .profile-table td.profile-amount { color: var(--ink); font-weight: 500; }
 
+.profile-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.profile-table .profile-actions { text-align: right; white-space: nowrap; }
+
+.profile-edit-link {
+    color: var(--accent);
+    font-weight: 500;
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+}
+
+.profile-edit-link:hover { text-decoration: underline; }
+
+.profile-edit-link:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
 .profile-pill {
     display: inline-block;
     padding: 0.25rem 0.5rem;
