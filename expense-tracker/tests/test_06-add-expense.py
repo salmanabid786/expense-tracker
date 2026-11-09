@@ -449,15 +449,3 @@ class TestEntryPoints:
         resp = auth.get(ADD_URL)
         assert resp.status_code == 200
 
-
-# ------------------------------------------------------------------ untouched placeholders
-class TestPlaceholdersUntouched:
-    def test_edit_placeholder_still_a_placeholder(self, auth):
-        resp = auth.get("/expenses/1/edit")
-        assert resp.status_code == 200
-        assert "coming in" in resp.get_data(as_text=True).lower()
-
-    def test_delete_placeholder_still_a_placeholder(self, auth):
-        resp = auth.get("/expenses/1/delete")
-        assert resp.status_code == 200
-        assert "coming in" in resp.get_data(as_text=True).lower()

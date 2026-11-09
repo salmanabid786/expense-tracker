@@ -10,6 +10,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from database.db import (
     CATEGORIES,
     add_expense as insert_expense,
+    delete_expense as remove_expense,
     get_db,
     get_expense,
     get_expenses,
@@ -375,6 +376,39 @@ def edit_expense(id):
     )
 
 
+@app.route("/expenses/<int:id>/delete", methods=["GET", "POST"])
+def delete_expense(id):
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    user_id = session["user_id"]
+    if get_user(user_id) is None:
+        session.clear()
+        return redirect(url_for("login"))
+
+    # Missing and not-owned expenses look the same: never reveal another user's row.
+    expense = get_expense(id, user_id)
+    if expense is None:
+        abort(404)
+
+    # Only POST deletes; GET just asks for confirmation.
+    if request.method == "POST":
+        remove_expense(id, user_id)
+        return redirect(url_for("profile"))
+
+    spent_on = _parse_stored_date(expense["date"])
+    return render_template(
+        "delete_expense.html",
+        expense={
+            "id": expense["id"],
+            "amount": expense["amount"],
+            "category": expense["category"],
+            "date": spent_on.strftime("%d %b %Y") if spent_on else expense["date"],
+            "description": expense["description"] or "",
+        },
+    )
+
+
 @app.route("/terms-and-conditions")
 def terms_and_conditions():
     return render_template("terms.html")
@@ -383,15 +417,6 @@ def terms_and_conditions():
 @app.route("/privacy-policy")
 def privacy_policy():
     return render_template("privacy.html")
-
-
-# ------------------------------------------------------------------ #
-# Placeholder routes — students will implement these                  #
-# ------------------------------------------------------------------ #
-
-@app.route("/expenses/<int:id>/delete")
-def delete_expense(id):
-    return "Delete expense — coming in Step 9"
 
 
 if __name__ == "__main__":

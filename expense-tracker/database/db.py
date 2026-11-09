@@ -108,6 +108,19 @@ def update_expense(expense_id, user_id, amount, category, spent_on, description)
         conn.close()
 
 
+def delete_expense(expense_id, user_id):
+    """Delete one expense owned by user_id. Return True if a row was deleted."""
+    conn = get_db()
+    try:
+        cur = conn.execute(
+            "DELETE FROM expenses WHERE id = ? AND user_id = ?", (expense_id, user_id)
+        )
+        conn.commit()
+        return cur.rowcount == 1
+    finally:
+        conn.close()
+
+
 def init_db():
     conn = get_db()
     conn.executescript(

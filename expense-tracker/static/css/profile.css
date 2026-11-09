@@ -275,6 +275,22 @@
     outline-offset: 2px;
 }
 
+.profile-delete-link {
+    color: var(--danger);
+    font-weight: 500;
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+}
+
+.profile-delete-link:hover { text-decoration: underline; }
+
+.profile-delete-link:focus-visible {
+    outline: 2px solid var(--danger);
+    outline-offset: 2px;
+}
+
+.profile-edit-link + .profile-delete-link { margin-left: 0.75rem; }
+
 .profile-pill {
     display: inline-block;
     padding: 0.25rem 0.5rem;
