@@ -58,14 +58,14 @@
             <span class="profile-stat-icon"><i data-lucide="wallet"></i></span>
             <div>
                 <p class="profile-stat-label">{{ 'Spent in period' if filter.active else 'Total spent' }}</p>
-                <p class="profile-stat-value">₹{{ "{:,.2f}".format(stats.total_spent) }}</p>
+                <p class="profile-stat-value">${{ "{:,.2f}".format(stats.total_spent) }}</p>
             </div>
         </div>
         <div class="profile-stat">
             <span class="profile-stat-icon"><i data-lucide="calendar"></i></span>
             <div>
                 <p class="profile-stat-label">This month</p>
-                <p class="profile-stat-value">₹{{ "{:,.2f}".format(stats.month_spent) }}</p>
+                <p class="profile-stat-value">${{ "{:,.2f}".format(stats.month_spent) }}</p>
             </div>
         </div>
         <div class="profile-stat">
@@ -108,7 +108,7 @@
                             <td class="profile-date">{{ t.date }}</td>
                             <td>{{ t.description }}</td>
                             <td><span class="profile-pill">{{ t.category }}</span></td>
-                            <td class="profile-amount">₹{{ "{:,.2f}".format(t.amount) }}</td>
+                            <td class="profile-amount">${{ "{:,.2f}".format(t.amount) }}</td>
                             <td class="profile-actions">
                                 <a href="{{ url_for('edit_expense', id=t.id) }}" class="profile-edit-link"
                                    aria-label="Edit expense: {{ t.description or t.category }}, {{ t.date }}">Edit</a>
@@ -138,7 +138,7 @@
                 {% for c in categories %}
                 <li class="profile-cat-row">
                     <span class="profile-cat-name">{{ c.name }}</span>
-                    <span class="profile-cat-amount">₹{{ "{:,.2f}".format(c.amount) }}</span>
+                    <span class="profile-cat-amount">${{ "{:,.2f}".format(c.amount) }}</span>
                     <div class="profile-cat-track">
                         <div class="profile-cat-bar" style="width: {{ c.percent }}%"></div>
                     </div>
